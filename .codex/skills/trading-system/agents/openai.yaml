@@ -1,0 +1,4 @@
+interface:
+  display_name: "Trading System"
+  short_description: "Work within the TradingEngine module structure."
+  default_prompt: "Use the trading-system project conventions to modify the trading engine safely."
