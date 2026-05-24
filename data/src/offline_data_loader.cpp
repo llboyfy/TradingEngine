@@ -11,19 +11,15 @@
 #include <vector>
 
 namespace trading::data {
-namespace {
 
-constexpr const char* kExpectedHeader =
-    "<TICKER>,<PER>,<DATE>,<TIME>,<OPEN>,<HIGH>,<LOW>,<CLOSE>,<VOL>,<OPENINT>";  // Required Stooq schema.
-
-std::string trimCr(std::string value) {
+std::string OfflineDataLoader::trimCr(std::string value) {
     if (!value.empty() && value.back() == '\r') {
         value.pop_back();
     }
     return value;
 }
 
-std::vector<std::string> splitCsvLine(const std::string& line) {
+std::vector<std::string> OfflineDataLoader::splitCsvLine(const std::string& line) {
     std::vector<std::string> fields;
     std::stringstream stream(line);
     std::string field;
@@ -33,32 +29,33 @@ std::vector<std::string> splitCsvLine(const std::string& line) {
     return fields;
 }
 
-bool isYyyymmdd(const std::string& value) {
+bool OfflineDataLoader::isYyyymmdd(const std::string& value) {
     return value.size() == 8 &&
            std::all_of(value.begin(), value.end(), [](unsigned char ch) {
                return std::isdigit(ch) != 0;
            });
 }
 
-bool isHhmmss(const std::string& value) {
+bool OfflineDataLoader::isHhmmss(const std::string& value) {
     return value.size() == 6 &&
            std::all_of(value.begin(), value.end(), [](unsigned char ch) {
                return std::isdigit(ch) != 0;
            });
 }
 
-LoadError makeError(LoadErrorCode code,
-                     std::string message,
-                     std::filesystem::path path = {},
-                     std::size_t line = 0) {
+LoadError OfflineDataLoader::makeError(LoadErrorCode code,
+                                       std::string message,
+                                       std::filesystem::path path,
+                                       std::size_t line) {
     return LoadError(code, std::move(message), std::move(path), line);
 }
 
-bool symbolAllowed(const std::unordered_set<std::string>& symbols, const std::string& symbol) {
+bool OfflineDataLoader::symbolAllowed(const std::unordered_set<std::string>& symbols,
+                                      const std::string& symbol) {
     return symbols.empty() || symbols.find(symbol) != symbols.end();
 }
 
-bool dateAllowed(const LoadRequest& request, const std::string& date) {
+bool OfflineDataLoader::dateAllowed(const LoadRequest& request, const std::string& date) {
     if (request.StartDate() && date < *request.StartDate()) {
         return false;
     }
@@ -68,7 +65,7 @@ bool dateAllowed(const LoadRequest& request, const std::string& date) {
     return true;
 }
 
-bool parseDouble(const std::string& value, double& out) {
+bool OfflineDataLoader::parseDouble(const std::string& value, double& out) {
     char* end = nullptr;
     errno = 0;
     const double parsed = std::strtod(value.c_str(), &end);
@@ -79,9 +76,9 @@ bool parseDouble(const std::string& value, double& out) {
     return true;
 }
 
-LoadResult<Bar> parseBar(const std::filesystem::path& path,
-                          std::size_t lineNumber,
-                          const std::string& line) {
+LoadResult<Bar> OfflineDataLoader::parseBar(const std::filesystem::path& path,
+                                            std::size_t lineNumber,
+                                            const std::string& line) {
     const auto fields = splitCsvLine(line);
     if (fields.size() != 10) {
         return LoadResult<Bar>::Failure(
@@ -122,7 +119,52 @@ LoadResult<Bar> parseBar(const std::filesystem::path& path,
         Bar(fields[0], fields[1], fields[2], fields[3], open, high, low, close, volume, openInterest));
 }
 
-}  // namespace
+LoadResult<bool> OfflineDataLoader::loadFile(const std::filesystem::path& path,
+                                             const LoadRequest& request,
+                                             const std::unordered_set<std::string>& symbols,
+                                             MarketDataSet& dataSet) const {
+    if (path.filename() == ".DS_Store" || path.extension() != ".txt") {
+        return LoadResult<bool>::Success(true);
+    }
+
+    std::ifstream file(path);
+    if (!file) {
+        return LoadResult<bool>::Failure(
+            makeError(LoadErrorCode::IoError, "Failed to open file", path));
+    }
+
+    std::string line;             // Current source row.
+    std::size_t lineNumber = 0;   // One-based line counter after the first read.
+    if (!std::getline(file, line)) {
+        return LoadResult<bool>::Success(true);
+    }
+    ++lineNumber;
+    if (trimCr(line) != kExpectedHeader_) {
+        return LoadResult<bool>::Failure(
+            makeError(LoadErrorCode::InvalidHeader, "Unexpected Stooq header", path, lineNumber));
+    }
+
+    while (std::getline(file, line)) {
+        ++lineNumber;
+        line = trimCr(std::move(line));
+        if (line.empty()) {
+            continue;
+        }
+
+        auto parsed = parseBar(path, lineNumber, line);
+        if (!parsed) {
+            return LoadResult<bool>::Failure(parsed.Error());
+        }
+
+        auto bar = std::move(parsed.Value());
+        if (!symbolAllowed(symbols, bar.Symbol()) || !dateAllowed(request, bar.Date())) {
+            continue;
+        }
+        dataSet.AddBar(std::move(bar));
+    }
+
+    return LoadResult<bool>::Success(true);
+}
 
 LoadResult<MarketDataSet> OfflineDataLoader::Load(const LoadRequest& request) const {
     if (request.RootPath().empty()) {
@@ -151,53 +193,9 @@ LoadResult<MarketDataSet> OfflineDataLoader::Load(const LoadRequest& request) co
     std::unordered_set<std::string> symbols(request.Symbols().begin(), request.Symbols().end());  // Fast allow-list lookup.
     MarketDataSet dataSet;                                                                   // Accumulates normalized rows.
 
-    auto loadFile = [&](const std::filesystem::path& path) -> LoadResult<bool> {
-        if (path.filename() == ".DS_Store" || path.extension() != ".txt") {
-            return LoadResult<bool>::Success(true);
-        }
-
-        std::ifstream file(path);
-        if (!file) {
-            return LoadResult<bool>::Failure(
-                makeError(LoadErrorCode::IoError, "Failed to open file", path));
-        }
-
-        std::string line;             // Current source row.
-        std::size_t lineNumber = 0;   // One-based line counter after the first read.
-        if (!std::getline(file, line)) {
-            return LoadResult<bool>::Success(true);
-        }
-        ++lineNumber;
-        if (trimCr(line) != kExpectedHeader) {
-            return LoadResult<bool>::Failure(
-                makeError(LoadErrorCode::InvalidHeader, "Unexpected Stooq header", path, lineNumber));
-        }
-
-        while (std::getline(file, line)) {
-            ++lineNumber;
-            line = trimCr(std::move(line));
-            if (line.empty()) {
-                continue;
-            }
-
-            auto parsed = parseBar(path, lineNumber, line);
-            if (!parsed) {
-                return LoadResult<bool>::Failure(parsed.Error());
-            }
-
-            auto bar = std::move(parsed.Value());
-            if (!symbolAllowed(symbols, bar.Symbol()) || !dateAllowed(request, bar.Date())) {
-                continue;
-            }
-            dataSet.AddBar(std::move(bar));
-        }
-
-        return LoadResult<bool>::Success(true);
-    };
-
     std::error_code typeError;
     if (std::filesystem::is_regular_file(request.RootPath(), typeError)) {
-        auto loaded = loadFile(request.RootPath());
+        auto loaded = loadFile(request.RootPath(), request, symbols, dataSet);
         if (!loaded) {
             return LoadResult<MarketDataSet>::Failure(loaded.Error());
         }
@@ -229,7 +227,7 @@ LoadResult<MarketDataSet> OfflineDataLoader::Load(const LoadRequest& request) co
             continue;
         }
 
-        auto loaded = loadFile(path);
+        auto loaded = loadFile(path, request, symbols, dataSet);
         if (!loaded) {
             return LoadResult<MarketDataSet>::Failure(loaded.Error());
         }

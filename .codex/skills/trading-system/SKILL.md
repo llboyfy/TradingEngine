@@ -38,6 +38,7 @@ When adding a new `.cpp`, update `CMakeLists.txt` so it is compiled into the `tr
 - Describe intent or domain meaning; do not repeat the commented function, variable, or class name.
 - Place member-variable comments at the end of the declaration line.
 - Place class and struct comments in headers immediately before the declaration.
+- Add concise parameter comments above function declarations when parameters are non-obvious or the function is private implementation detail.
 - Prefer short comments only where they reduce ambiguity.
 
 ## Naming Style

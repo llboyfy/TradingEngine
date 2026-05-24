@@ -4,6 +4,10 @@
         "${workspaceFolder}/data/include",
         "${workspaceFolder}/**"
     ],
+    "C_Cpp.default.browse.path": [
+        "${workspaceFolder}/data/include",
+        "${workspaceFolder}/**"
+    ],
     "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
     "C_Cpp.default.configurationProvider": "",
     "C_Cpp.errorSquiggles": "enabled"

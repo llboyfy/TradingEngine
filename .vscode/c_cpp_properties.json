@@ -10,6 +10,13 @@
                 "${workspaceFolder}/data/include",
                 "${workspaceFolder}/**"
             ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/data/include",
+                    "${workspaceFolder}/**"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            },
             "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ]
