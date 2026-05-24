@@ -18,7 +18,8 @@ Use this skill to keep TradingEngine changes aligned with the repository's curre
 
 Place orchestration entry files directly under `app/`.
 Do not wire local development data into code until the user explicitly asks for integration.
-If data ingestion code is added later, keep it inside `data/` first instead of creating more top-level modules.
+Keep data ingestion headers directly under `data/include/` and implementations under `data/src/`.
+Use short module include paths such as `"offline_data_loader.h"` and keep `data/include/` configured as an include root in CMake and editor settings.
 
 ## Build Rules
 
@@ -31,6 +32,20 @@ cmake --build build
 ```
 
 When adding a new `.cpp`, update `CMakeLists.txt` so it is compiled into the `trading_engine` target. Keep generated files in `build/` and local datasets in `data/dev/`.
+
+## Comment Style
+
+- Describe intent or domain meaning; do not repeat the commented function, variable, or class name.
+- Place member-variable comments at the end of the declaration line.
+- Place class and struct comments in headers immediately before the declaration.
+- Prefer short comments only where they reduce ambiguity.
+
+## Naming Style
+
+- Use PascalCase for public methods.
+- Use lowerCamelCase for private methods and helper functions.
+- Do not use underscores as word separators in identifiers; use camel case.
+- Keep member variables private when possible, name them lowerCamelCase, and add a trailing `_`.
 
 ## Change Workflow
 
