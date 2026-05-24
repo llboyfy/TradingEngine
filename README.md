@@ -14,15 +14,8 @@ cmake --build build
 
 ```text
 app        program orchestration entry
-data       data ingestion
-market     market data models
-strategy   strategy decisions, factors, and ranking
-backtest   backtest simulation
-portfolio  account and positions
-execution  order execution abstractions
-risk       risk constraints
-report     result reports
-infra      shared infrastructure and core types
+data       data ingestion and local development datasets
 ```
 
+Local development datasets live under `data/dev/` and are ignored by Git.
 Project-specific Codex conventions live in `.codex/skills/trading-system`.
