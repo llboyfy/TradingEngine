@@ -8,11 +8,13 @@
             "intelliSenseMode": "macos-clang-arm64",
             "includePath": [
                 "${workspaceFolder}/data/include",
+                "${workspaceFolder}/infra/include",
                 "${workspaceFolder}/**"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/data/include",
+                    "${workspaceFolder}/infra/include",
                     "${workspaceFolder}/**"
                 ],
                 "limitSymbolsToIncludedHeaders": true

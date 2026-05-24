@@ -2,10 +2,12 @@
     "C_Cpp.default.cppStandard": "c++17",
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/data/include",
+        "${workspaceFolder}/infra/include",
         "${workspaceFolder}/**"
     ],
     "C_Cpp.default.browse.path": [
         "${workspaceFolder}/data/include",
+        "${workspaceFolder}/infra/include",
         "${workspaceFolder}/**"
     ],
     "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",

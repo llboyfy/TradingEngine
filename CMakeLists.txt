@@ -8,13 +8,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(trading_engine
+    app/data_load_startup_task.cpp
     app/main.cpp
     data/src/offline_data_loader.cpp
     data/src/online_data_loader.cpp
+    infra/src/logger.cpp
 )
 
 target_include_directories(trading_engine
     PRIVATE
         ${PROJECT_SOURCE_DIR}
         ${PROJECT_SOURCE_DIR}/data/include
+        ${PROJECT_SOURCE_DIR}/infra/include
 )

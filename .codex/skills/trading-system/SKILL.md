@@ -13,13 +13,16 @@ Use this skill to keep TradingEngine changes aligned with the repository's curre
 
 - `app`: Program orchestration and executable entry points. Keep CLI/bootstrap code here.
 - `data`: Data ingestion work and local development datasets. Keep large development-only datasets under `data/dev/`, which is ignored by Git.
+- `infra`: Shared infrastructure such as logging and local runtime diagnostics.
 
 ## File Placement
 
 Place orchestration entry files directly under `app/`.
+Represent startup steps with an app-level interface so each module can provide its own startup task.
 Do not wire local development data into code until the user explicitly asks for integration.
 Keep data ingestion headers directly under `data/include/` and implementations under `data/src/`.
 Use short module include paths such as `"offline_data_loader.h"` and keep `data/include/` configured as an include root in CMake and editor settings.
+Keep infrastructure headers under `infra/include/` and implementations under `infra/src/`.
 
 ## Build Rules
 
@@ -31,7 +34,7 @@ cmake --build build
 ./build/trading_engine
 ```
 
-When adding a new `.cpp`, update `CMakeLists.txt` so it is compiled into the `trading_engine` target. Keep generated files in `build/` and local datasets in `data/dev/`.
+When adding a new `.cpp`, update `CMakeLists.txt` so it is compiled into the `trading_engine` target. Keep generated files in `build/`, runtime logs in `temp/`, and local datasets in `data/dev/`.
 
 ## Comment Style
 
