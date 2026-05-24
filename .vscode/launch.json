@@ -12,7 +12,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb",
-            "preLaunchTask": "build: trading_engine"
+            "preLaunchTask": "cmake: build"
         }
     ]
 }

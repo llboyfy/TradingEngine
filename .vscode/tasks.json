@@ -2,29 +2,29 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "prepare: build dir",
+            "label": "cmake: configure",
             "type": "shell",
-            "command": "mkdir",
+            "command": "cmake",
             "args": [
-                "-p",
-                "${workspaceFolder}/build"
+                "-S",
+                "${workspaceFolder}",
+                "-B",
+                "${workspaceFolder}/build",
+                "-DCMAKE_BUILD_TYPE=Debug"
             ],
             "problemMatcher": []
         },
         {
-            "label": "build: trading_engine",
+            "label": "cmake: build",
             "type": "shell",
-            "command": "/usr/bin/clang++",
+            "command": "cmake",
             "args": [
-                "-std=c++17",
-                "-g",
-                "${workspaceFolder}/tools/run_backtest/main.cpp",
-                "-I",
-                "${workspaceFolder}/include",
-                "-o",
-                "${workspaceFolder}/build/trading_engine"
+                "--build",
+                "${workspaceFolder}/build",
+                "--config",
+                "Debug"
             ],
-            "dependsOn": "prepare: build dir",
+            "dependsOn": "cmake: configure",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -37,7 +37,7 @@
             "label": "run: trading_engine",
             "type": "shell",
             "command": "${workspaceFolder}/build/trading_engine",
-            "dependsOn": "build: trading_engine",
+            "dependsOn": "cmake: build",
             "group": {
                 "kind": "test",
                 "isDefault": true
